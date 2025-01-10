@@ -169,35 +169,52 @@
             }
 
             async loadGallery() {
-                this.container.innerHTML = '<div class="loading">Loading gallery...</div>';
-                
-                try {
-                    console.log('Fetching:', `${this.bucketUrl}/${this.currentPath}?list-type=2`);
-                    const response = await fetch(`${this.bucketUrl}/${this.currentPath}?list-type=2`, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                            'Accept': 'application/xml'
-                        }
-                    });
+              this.container.innerHTML = '<div class="loading">Loading gallery...</div>';
+              
+              try {
+                  const url = `${this.bucketUrl}/${this.currentPath}?list-type=2`;
+                  console.log('Fetching:', url);
+                  
+                  const response = await fetch(url, {
+                      method: 'GET',
+                      mode: 'cors',
+                      headers: {
+                          'Accept': 'application/xml'
+                      }
+                  });
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                  if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                  }
 
-                    const text = await response.text();
-                    console.log('First 200 chars of response:', text.substring(0, 200));
-                    
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(text, "text/xml");
-                    
-                    this.container.innerHTML = ''; // Clear loading message
-                    
+                  const text = await response.text();
+                  console.log('Full response text:', text);
+                  console.log('Response length:', text.length);
+                  
+                  if (!text.trim()) {
+                      this.container.innerHTML = '<div class="error">No content found in this directory</div>';
+                      return;
+                  }
+
+                  const parser = new DOMParser();
+                  const xmlDoc = parser.parseFromString(text, "text/xml");
+                  console.log('Parsed XML:', xmlDoc);
+
+                  // Check for parsing errors
+                  const parserError = xmlDoc.getElementsByTagName('parsererror');
+                  if (parserError.length > 0) {
+                      throw new Error('XML parsing error: ' + parserError[0].textContent);
+                  }
+
+                  this.container.innerHTML = ''; // Clear loading message
+                  
                     // Add breadcrumbs
                     this.addBreadcrumbs();
                     
                     // Process contents
                     const { directories, images } = this.processContents(xmlDoc);
+                    console.log('Found directories:', directories);
+                    console.log('Found images:', images);
                     
                     // Render directories
                     this.renderDirectories(directories);
@@ -211,44 +228,44 @@
                 }
             }
 
-            processContents(xmlDoc) {
-                const directories = new Set();
-                const images = new Map();
-                
-                const contents = xmlDoc.getElementsByTagName('Contents');
-                Array.from(contents).forEach(item => {
-                    const key = item.getElementsByTagName('Key')[0].textContent;
-                    
-                    // Remove current path from key to get relative path
-                    const relativePath = key.slice(this.currentPath.length);
-                    if (!relativePath) return;
-                    
-                    const parts = relativePath.split('/');
-                    
-                    if (parts.length > 1) {
-                        // This is a subdirectory
-                        directories.add(parts[0]);
-                    } else {
-                        // This is a file
-                        if (key.match(/\.(jpg|jpeg|png|gif)$/i)) {
-                            const baseNameMatch = key.match(/(.*?)_(preview|full)\.(.*)/);
-                            if (baseNameMatch) {
-                                const [, baseName, type, ext] = baseNameMatch;
-                                if (!images.has(baseName)) {
-                                    images.set(baseName, {});
-                                }
-                                images.get(baseName)[type] = `${this.bucketUrl}/${key}`;
-                            }
-                        }
-                    }
-                });
-                
-                return { directories, images };
-            }
+              processContents(xmlDoc) {
+                  const directories = new Set();
+                  const images = new Map();
+                  
+                  const contents = xmlDoc.getElementsByTagName('Contents');
+                  Array.from(contents).forEach(item => {
+                      const key = item.getElementsByTagName('Key')[0].textContent;
+                      
+                      // Remove current path from key to get relative path
+                      const relativePath = key.slice(this.currentPath.length);
+                      if (!relativePath) return;
+                      
+                      const parts = relativePath.split('/');
+                      
+                      if (parts.length > 1) {
+                          // This is a subdirectory
+                          directories.add(parts[0]);
+                      } else {
+                          // This is a file
+                          if (key.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                              const baseNameMatch = key.match(/(.*?)_(preview|full)\.(.*)/);
+                              if (baseNameMatch) {
+                                  const [, baseName, type, ext] = baseNameMatch;
+                                  if (!images.has(baseName)) {
+                                      images.set(baseName, {});
+                                  }
+                                  images.get(baseName)[type] = `${this.bucketUrl}/${key}`;
+                              }
+                          }
+                      }
+                  });
+                  
+                  return { directories, images };
+              }
 
-            addBreadcrumbs() {
-                const breadcrumbs = document.createElement('div');
-                breadcrumbs.className = 'breadcrumbs';
+              addBreadcrumbs() {
+                  const breadcrumbs = document.createElement('div');
+                  breadcrumbs.className = 'breadcrumbs';
                 
                 let html = '<a href="?path=photo/">Home</a>';
                 let currentPath = 'photo/';
