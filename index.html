@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>do9 Photo Gallery</title>
+    <title>Photo Gallery</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
+            background: #f5f5f5;
         }
 
         .photo-gallery {
@@ -21,8 +22,9 @@
         .breadcrumbs {
             margin-bottom: 20px;
             padding: 10px;
-            background: #f5f5f5;
+            background: white;
             border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .breadcrumbs a {
@@ -43,15 +45,16 @@
 
         .directory {
             padding: 10px 15px;
-            background: #eee;
+            background: white;
             border-radius: 5px;
             text-decoration: none;
             color: #333;
             transition: background-color 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .directory:hover {
-            background: #ddd;
+            background: #f0f0f0;
         }
 
         .images {
@@ -62,9 +65,10 @@
 
         .image-item {
             position: relative;
-            background: #f5f5f5;
+            background: white;
             padding: 10px;
             border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .image-item img {
@@ -85,7 +89,7 @@
             font-size: 0.9em;
             color: #666;
             padding: 10px;
-            background: white;
+            background: #f8f8f8;
             border-radius: 5px;
         }
 
@@ -115,6 +119,12 @@
             object-fit: contain;
         }
 
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
         .error {
             color: #721c24;
             background-color: #f8d7da;
@@ -124,14 +134,6 @@
             margin: 1rem 0;
         }
 
-        /* Loading indicator */
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-        }
-
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .photo-gallery {
                 padding: 10px;
@@ -151,13 +153,13 @@
         class PhotoGallery {
             constructor(elementId) {
                 this.container = document.getElementById(elementId);
-                this.currentPath = new URLSearchParams(window.location.search).get('path') || '';
-                this.bucketUrl = 'https://i.do9.co/2024/';
+                this.currentPath = new URLSearchParams(window.location.search).get('path') || 'photo/';
+                this.bucketUrl = 'https://i.do9.co';
                 
                 this.init();
                 
                 window.addEventListener('popstate', () => {
-                    this.currentPath = new URLSearchParams(window.location.search).get('path') || '';
+                    this.currentPath = new URLSearchParams(window.location.search).get('path') || 'photo/';
                     this.loadGallery();
                 });
             }
@@ -170,25 +172,22 @@
                 this.container.innerHTML = '<div class="loading">Loading gallery...</div>';
                 
                 try {
-                    console.log('Attempting to fetch from:', this.bucketUrl);
-                    const response = await fetch(this.bucketUrl, {
+                    console.log('Fetching:', `${this.bucketUrl}/${this.currentPath}?list-type=2`);
+                    const response = await fetch(`${this.bucketUrl}/${this.currentPath}?list-type=2`, {
                         method: 'GET',
-                        mode: 'cors',  // Explicitly set CORS mode
+                        mode: 'cors',
                         headers: {
-                            'Accept': 'application/xml'  // Since we're expecting XML
+                            'Accept': 'application/xml'
                         }
                     });
-                    
-                    console.log('Response:', response);
-                    console.log('Response headers:', Object.fromEntries(response.headers));
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    
-                    const text = await response.text();
-                    console.log('First 100 chars of response:', text.substring(0, 100));
 
+                    const text = await response.text();
+                    console.log('First 200 chars of response:', text.substring(0, 200));
+                    
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(text, "text/xml");
                     
@@ -197,11 +196,8 @@
                     // Add breadcrumbs
                     this.addBreadcrumbs();
                     
-                    // Get all objects
-                    const contents = xmlDoc.getElementsByTagName('Contents');
-                    
-                    // Process directories and images
-                    const { directories, images } = this.processContents(contents);
+                    // Process contents
+                    const { directories, images } = this.processContents(xmlDoc);
                     
                     // Render directories
                     this.renderDirectories(directories);
@@ -210,40 +206,38 @@
                     await this.renderImages(images);
                     
                 } catch (err) {
-                  console.error("Detailed error:", {
-                      message: err.message,
-                      error: err,
-                      url: this.bucketUrl
-                  });
-                  this.container.innerHTML = `<div class="error">Error loading gallery: ${err.message}</div>`;
+                    console.error("Detailed error:", err);
+                    this.container.innerHTML = `<div class="error">Error loading gallery: ${err.message}</div>`;
                 }
             }
 
-            processContents(contents) {
+            processContents(xmlDoc) {
                 const directories = new Set();
                 const images = new Map();
                 
+                const contents = xmlDoc.getElementsByTagName('Contents');
                 Array.from(contents).forEach(item => {
                     const key = item.getElementsByTagName('Key')[0].textContent;
                     
-                    if (key.startsWith(this.currentPath)) {
-                        const remainingPath = key.slice(this.currentPath.length);
-                        if (!remainingPath) return;
-                        
-                        const parts = remainingPath.split('/');
-                        
-                        if (parts.length > 1) {
-                            directories.add(parts[0]);
-                        } else {
-                            if (key.match(/\.(jpg|jpeg|png|gif)$/i)) {
-                                const baseNameMatch = key.match(/(.*?)_(preview|full)\.(.*)/);
-                                if (baseNameMatch) {
-                                    const [, baseName, type, ext] = baseNameMatch;
-                                    if (!images.has(baseName)) {
-                                        images.set(baseName, {});
-                                    }
-                                    images.get(baseName)[type] = `${this.bucketUrl}/${key}`;
+                    // Remove current path from key to get relative path
+                    const relativePath = key.slice(this.currentPath.length);
+                    if (!relativePath) return;
+                    
+                    const parts = relativePath.split('/');
+                    
+                    if (parts.length > 1) {
+                        // This is a subdirectory
+                        directories.add(parts[0]);
+                    } else {
+                        // This is a file
+                        if (key.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                            const baseNameMatch = key.match(/(.*?)_(preview|full)\.(.*)/);
+                            if (baseNameMatch) {
+                                const [, baseName, type, ext] = baseNameMatch;
+                                if (!images.has(baseName)) {
+                                    images.set(baseName, {});
                                 }
+                                images.get(baseName)[type] = `${this.bucketUrl}/${key}`;
                             }
                         }
                     }
@@ -256,10 +250,10 @@
                 const breadcrumbs = document.createElement('div');
                 breadcrumbs.className = 'breadcrumbs';
                 
-                let html = '<a href="?path=">Home</a>';
-                let currentPath = '';
+                let html = '<a href="?path=photo/">Home</a>';
+                let currentPath = 'photo/';
                 
-                const parts = this.currentPath.split('/').filter(p => p);
+                const parts = this.currentPath.slice(6).split('/').filter(p => p); // Remove 'photo/' from the start
                 parts.forEach(part => {
                     currentPath += part + '/';
                     html += ` > <a href="?path=${currentPath}">${part}</a>`;
@@ -287,34 +281,36 @@
             }
 
             async renderImages(images) {
-                const imageContainer = document.createElement('div');
-                imageContainer.className = 'images';
-                
-                for (const [baseName, urls] of images) {
-                    const imageElement = document.createElement('div');
-                    imageElement.className = 'image-item';
+                if (images.size > 0) {
+                    const imageContainer = document.createElement('div');
+                    imageContainer.className = 'images';
                     
-                    const img = document.createElement('img');
-                    img.src = urls.preview;
-                    img.alt = baseName;
-                    img.loading = 'lazy';
-                    img.onclick = () => this.showFullImage(urls.full);
-                    
-                    try {
-                        const exifData = await this.getExifData(urls.preview);
-                        const exifElement = document.createElement('div');
-                        exifElement.className = 'exif-data';
-                        exifElement.innerHTML = this.formatExifData(exifData);
-                        imageElement.appendChild(exifElement);
-                    } catch (err) {
-                        console.warn('Could not load EXIF data:', err);
+                    for (const [baseName, urls] of images) {
+                        const imageElement = document.createElement('div');
+                        imageElement.className = 'image-item';
+                        
+                        const img = document.createElement('img');
+                        img.src = urls.preview;
+                        img.alt = baseName;
+                        img.loading = 'lazy';
+                        img.onclick = () => this.showFullImage(urls.full);
+                        
+                        try {
+                            const exifData = await this.getExifData(urls.preview);
+                            const exifElement = document.createElement('div');
+                            exifElement.className = 'exif-data';
+                            exifElement.innerHTML = this.formatExifData(exifData);
+                            imageElement.appendChild(exifElement);
+                        } catch (err) {
+                            console.warn('Could not load EXIF data:', err);
+                        }
+                        
+                        imageElement.appendChild(img);
+                        imageContainer.appendChild(imageElement);
                     }
                     
-                    imageElement.appendChild(img);
-                    imageContainer.appendChild(imageElement);
+                    this.container.appendChild(imageContainer);
                 }
-                
-                this.container.appendChild(imageContainer);
             }
 
             async getExifData(imageUrl) {
