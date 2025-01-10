@@ -210,8 +210,12 @@
                     await this.renderImages(images);
                     
                 } catch (err) {
-                    console.error("Error loading gallery:", err);
-                    this.container.innerHTML = `<div class="error">Error loading gallery: ${err.message}</div>`;
+                  console.error("Detailed error:", {
+                      message: err.message,
+                      error: err,
+                      url: this.bucketUrl
+                  });
+                  this.container.innerHTML = `<div class="error">Error loading gallery: ${err.message}</div>`;
                 }
             }
 
