@@ -180,6 +180,8 @@
                       mode: 'cors',
                       headers: {
                           'Accept': 'application/xml'
+                          'Content-Type': 'application/xml',
+                          'x-amz-list-type': '2'
                       }
                   });
 
@@ -188,7 +190,8 @@
                   }
 
                   const text = await response.text();
-                  console.log('Full response text:', text);
+                  console.log('Response headers:', Object.fromEntries(response.headers));
+                  console.log('Response text:', text);
                   console.log('Response length:', text.length);
                   
                   if (!text.trim()) {
