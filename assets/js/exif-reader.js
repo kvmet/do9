@@ -310,4 +310,4 @@ const ExifReader = {
   },
 };
 
-export { ExifReader, displayImageWithExif };
+export { ExifReader };
