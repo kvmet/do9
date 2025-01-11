@@ -131,7 +131,7 @@ const ExifReader = {
           result.cameraModel = this.getStringFromBuffer(
             view,
             tiffStart + valueOffset,
-            components,
+            components - 1,
           );
           break;
         case this.tags.ExposureTime:
