@@ -16,7 +16,7 @@ const ExifReader = {
     FocalLength: 0x920a,
     LensModel: 0xa434,
     Flash: 0x9209,
-    //Comment: 0x9286,
+    Comment: 0x9286,
     ExposureMode: 0xa402,
   },
 
@@ -173,6 +173,7 @@ const ExifReader = {
       lensModel: null,
       flash: null,
       exposureMode: null,
+      comment: null,
       exifIFDPointer: null,
     };
 
@@ -237,6 +238,13 @@ const ExifReader = {
             break;
           case this.exifTags.DateTimeOriginal:
             result.dateTime = this.getStringFromBuffer(
+              view,
+              tiffStart + valueOffset,
+              components,
+            );
+            break;
+          case this.exifTags.Comment:
+            result.comment = this.getStringFromBuffer(
               view,
               tiffStart + valueOffset,
               components,

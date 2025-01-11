@@ -147,8 +147,13 @@ class PhotoGallery {
   formatExifData(exif) {
     let html = '<ul class="exif-details">';
 
+    if (exif.make) html += `<li>Make: ${this.escapeHtml(exif.make)}</li>`;
     if (exif.cameraModel)
       html += `<li>Camera: ${this.escapeHtml(exif.cameraModel)}</li>`;
+    if (exif.description)
+      html += `<li>Description: ${this.escapeHtml(exif.description)}</li>`;
+    if (exif.comment)
+      html += `<li>Comment: ${this.escapeHtml(exif.comment)}</li>`;
     if (exif.lensModel)
       html += `<li>Lens: ${this.escapeHtml(exif.lensModel)}</li>`;
     if (exif.dateTime)
