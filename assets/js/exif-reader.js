@@ -3,6 +3,7 @@ const ExifReader = {
   mainTags: {
     Make: 0x010f,
     Model: 0x0110,
+    Description: 0x010e,
     ExifIFDPointer: 0x8769, // Points to sub-IFD with technical EXIF data
   },
 
@@ -15,7 +16,7 @@ const ExifReader = {
     FocalLength: 0x920a,
     LensModel: 0xa434,
     Flash: 0x9209,
-    Comment: 0x9286,
+    //Comment: 0x9286,
     ExposureMode: 0xa402,
   },
 
@@ -163,6 +164,7 @@ const ExifReader = {
     const result = {
       make: null,
       cameraModel: null,
+      description: null,
       shutterSpeed: null,
       aperture: null,
       iso: null,
@@ -172,7 +174,6 @@ const ExifReader = {
       flash: null,
       exposureMode: null,
       exifIFDPointer: null,
-      comment: null,
     };
 
     const numEntries = view.getUint16(dirStart, !bigEnd);
@@ -199,6 +200,13 @@ const ExifReader = {
             break;
           case this.mainTags.Model:
             result.cameraModel = this.getStringFromBuffer(
+              view,
+              tiffStart + valueOffset,
+              components,
+            ).trim();
+            break;
+          case this.mainTags.Description:
+            result.description = this.getStringFromBuffer(
               view,
               tiffStart + valueOffset,
               components,
@@ -238,13 +246,6 @@ const ExifReader = {
             const flnum = view.getUint32(tiffStart + valueOffset, !bigEnd);
             const flden = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
             result.focalLength = Math.round(flnum / flden);
-            break;
-          case this.exifTags.Comment:
-            result.comment = this.getStringFromBuffer(
-              view,
-              tiffStart + valueOffset,
-              components,
-            );
             break;
           case this.exifTags.LensModel:
             result.lensModel = this.getStringFromBuffer(
