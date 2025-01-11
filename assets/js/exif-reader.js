@@ -24,38 +24,40 @@ const ExifReader = {
     ExposureMode: 0xa402,
   },
 
-  // Mapping for Flash values
-  flashMap: {
-    0x0: "No Flash",
-    0x1: "Flash Fired",
-    0x5: "Flash Fired, Return not detected",
-    0x7: "Flash Fired, Return detected",
-    0x8: "On, Flash did not fire",
-    0x9: "Flash Fired, Compulsory",
-    0xd: "Flash Fired, Compulsory, Return not detected",
-    0xf: "Flash Fired, Compulsory, Return detected",
-    0x10: "Off, Did not fire",
-    0x18: "Off, Did not fire, Return not detected",
-    0x19: "Flash Fired, Auto",
-    0x1d: "Flash Fired, Auto, Return not detected",
-    0x1f: "Flash Fired, Auto, Return detected",
-    0x20: "No flash function",
-    0x41: "Flash Fired, Red-eye reduction",
-    0x45: "Flash Fired, Red-eye reduction, Return not detected",
-    0x47: "Flash Fired, Red-eye reduction, Return detected",
-    0x49: "Flash Fired, Compulsory, Red-eye reduction",
-    0x4d: "Flash Fired, Compulsory, Red-eye reduction, Return not detected",
-    0x4f: "Flash Fired, Compulsory, Red-eye reduction, Return detected",
-    0x59: "Flash Fired, Auto, Red-eye reduction",
-    0x5d: "Flash Fired, Auto, Return not detected, Red-eye reduction",
-    0x5f: "Flash Fired, Auto, Return detected, Red-eye reduction",
-  },
+  mappings: {
+    // Mapping for Flash values
+    flash: {
+      0x0: "No Flash",
+      0x1: "Flash Fired",
+      0x5: "Flash Fired, Return not detected",
+      0x7: "Flash Fired, Return detected",
+      0x8: "On, Flash did not fire",
+      0x9: "Flash Fired, Compulsory",
+      0xd: "Flash Fired, Compulsory, Return not detected",
+      0xf: "Flash Fired, Compulsory, Return detected",
+      0x10: "Off, Did not fire",
+      0x18: "Off, Did not fire, Return not detected",
+      0x19: "Flash Fired, Auto",
+      0x1d: "Flash Fired, Auto, Return not detected",
+      0x1f: "Flash Fired, Auto, Return detected",
+      0x20: "No flash function",
+      0x41: "Flash Fired, Red-eye reduction",
+      0x45: "Flash Fired, Red-eye reduction, Return not detected",
+      0x47: "Flash Fired, Red-eye reduction, Return detected",
+      0x49: "Flash Fired, Compulsory, Red-eye reduction",
+      0x4d: "Flash Fired, Compulsory, Red-eye reduction, Return not detected",
+      0x4f: "Flash Fired, Compulsory, Red-eye reduction, Return detected",
+      0x59: "Flash Fired, Auto, Red-eye reduction",
+      0x5d: "Flash Fired, Auto, Return not detected, Red-eye reduction",
+      0x5f: "Flash Fired, Auto, Return detected, Red-eye reduction",
+    },
 
-  // Mapping for Exposure Mode
-  exposureModeMap: {
-    0: "Auto",
-    1: "Manual",
-    2: "Auto bracket",
+    // Mapping for Exposure Mode
+    exposureMode: {
+      0: "Auto",
+      1: "Manual",
+      2: "Auto bracket",
+    },
   },
 
   // Main entry point
