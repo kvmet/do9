@@ -8,6 +8,9 @@ const ExifReader = {
     DateTimeOriginal: 0x9003,
     FocalLength: 0x920a,
     LensModel: 0xa434,
+    ExifIFDPointer: 0x8769, // Important! This points to additional EXIF data
+    Flash: 0x9209,
+    ExposureMode: 0xa402,
   },
 
   // Mapping for Flash values
@@ -104,6 +107,8 @@ const ExifReader = {
       dateTime: null,
       lensModel: null,
       cameraModel: null,
+      flash: null,
+      exposureMode: null,
     };
 
     const numEntries = view.getUint16(dirStart, !bigEnd);
@@ -113,70 +118,75 @@ const ExifReader = {
       const tag = view.getUint16(offset, !bigEnd);
       const format = view.getUint16(offset + 2, !bigEnd);
       const components = view.getUint32(offset + 4, !bigEnd);
-      const valueOffset = view.getUint32(offset + 8, !bigEnd);
+      let valueOffset = view.getUint32(offset + 8, !bigEnd);
 
-      // Handle different tags
+      // For some formats, the value is stored directly in valueOffset if it's 4 bytes or less
+      if (format === 3 && components <= 2) {
+        // SHORT format
+        valueOffset = offset + 8;
+      }
+
       switch (tag) {
         case this.tags.Model:
           result.cameraModel = this.getStringFromBuffer(
             view,
             tiffStart + valueOffset,
-            components - 1,
+            components,
           );
           break;
-
         case this.tags.ExposureTime:
           const num = view.getUint32(tiffStart + valueOffset, !bigEnd);
           const den = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
           result.shutterSpeed = `${num}/${den}`;
           break;
-
         case this.tags.FNumber:
           const fnum = view.getUint32(tiffStart + valueOffset, !bigEnd);
           const fden = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
           result.aperture = (fnum / fden).toFixed(1);
           break;
-
         case this.tags.ISO:
-          if (format === 3) {
-            // SHORT format
-            result.iso = valueOffset; // For SHORT format, the value is stored directly
-          } else {
-            result.iso = view.getUint16(tiffStart + valueOffset, !bigEnd);
-          }
+          result.iso =
+            format === 3
+              ? view.getUint16(valueOffset, !bigEnd)
+              : view.getUint16(tiffStart + valueOffset, !bigEnd);
           break;
-
+        case this.tags.DateTimeOriginal:
+          result.dateTime = this.getStringFromBuffer(
+            view,
+            tiffStart + valueOffset,
+            components,
+          );
+          break;
         case this.tags.FocalLength:
           const flnum = view.getUint32(tiffStart + valueOffset, !bigEnd);
           const flden = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
           result.focalLength = Math.round(flnum / flden);
           break;
-
         case this.tags.LensModel:
           result.lensModel = this.getStringFromBuffer(
             view,
             tiffStart + valueOffset,
-            components - 1,
+            components,
           );
           break;
-
+        case this.tags.Flash:
+          const flashValue = view.getUint16(tiffStart + valueOffset, !bigEnd);
+          result.flash = this.flashMap[flashValue] || "Unknown";
+          break;
+        case this.tags.ExposureMode:
+          const exposureMode = view.getUint16(tiffStart + valueOffset, !bigEnd);
+          result.exposureMode = this.exposureModeMap[exposureMode] || "Unknown";
+          break;
         case this.tags.ExifIFDPointer:
-          // Parse the sub-IFD
           const subResult = this.parseIFD(
             view,
             tiffStart + valueOffset,
             tiffStart,
             bigEnd,
           );
-          // Merge any non-null values from sub-IFD
-          Object.entries(subResult).forEach(([key, value]) => {
-            if (value !== null) {
-              result[key] = value;
-            }
-          });
+          Object.assign(result, subResult);
           break;
       }
-
       offset += 12;
     }
 

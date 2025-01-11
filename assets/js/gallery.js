@@ -151,6 +151,8 @@ class PhotoGallery {
       html += `<li>Camera: ${this.escapeHtml(exif.cameraModel)}</li>`;
     if (exif.lensModel)
       html += `<li>Lens: ${this.escapeHtml(exif.lensModel)}</li>`;
+    if (exif.dateTime)
+      html += `<li>Date: ${this.escapeHtml(exif.dateTime)}</li>`;
     if (exif.shutterSpeed)
       html += `<li>Shutter: ${this.escapeHtml(exif.shutterSpeed)}s</li>`;
     if (exif.aperture) html += `<li>ƒ/${this.escapeHtml(exif.aperture)}</li>`;
@@ -158,6 +160,9 @@ class PhotoGallery {
       html += `<li>ISO ${this.escapeHtml(exif.iso.toString())}</li>`;
     if (exif.focalLength)
       html += `<li>${this.escapeHtml(exif.focalLength.toString())}mm</li>`;
+    if (exif.flash) html += `<li>Flash: ${this.escapeHtml(exif.flash)}</li>`;
+    if (exif.exposureMode)
+      html += `<li>Mode: ${this.escapeHtml(exif.exposureMode)}</li>`;
 
     html += "</ul>";
     return html;
