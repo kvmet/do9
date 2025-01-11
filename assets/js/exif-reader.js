@@ -15,6 +15,7 @@ const ExifReader = {
     FocalLength: 0x920a,
     LensModel: 0xa434,
     Flash: 0x9209,
+    Comment: 0x9286,
     ExposureMode: 0xa402,
   },
 
@@ -44,6 +45,35 @@ const ExifReader = {
     0x5d: "Flash Fired, Auto, Return not detected, Red-eye reduction",
     0x5f: "Flash Fired, Auto, Return detected, Red-eye reduction",
   },
+
+  /* These are pulled from docs:
+  0x0	= No Flash
+  0x1	= Fired
+  0x5	= Fired, Return not detected
+  0x7	= Fired, Return detected
+  0x8	= On, Did not fire
+  0x9	= On, Fired
+  0xd	= On, Return not detected
+  0xf	= On, Return detected
+  0x10	= Off, Did not fire
+  0x14	= Off, Did not fire, Return not detected
+  0x18	= Auto, Did not fire
+  0x19	= Auto, Fired
+  0x1d	= Auto, Fired, Return not detected
+  0x1f	= Auto, Fired, Return detected
+  0x20	= No flash function
+  0x30	= Off, No flash function
+  0x41	= Fired, Red-eye reduction
+  0x45	= Fired, Red-eye reduction, Return not detected
+  0x47	= Fired, Red-eye reduction, Return detected
+  0x49	= On, Red-eye reduction
+  0x4d	= On, Red-eye reduction, Return not detected
+  0x4f	= On, Red-eye reduction, Return detected
+  0x50	= Off, Red-eye reduction
+  0x58	= Auto, Did not fire, Red-eye reduction
+  0x59	= Auto, Fired, Red-eye reduction
+  0x5d	= Auto, Fired, Red-eye reduction, Return not detected
+  0x5f	= Auto, Fired, Red-eye reduction, Return detected */
 
   // Mapping for Exposure Mode
   exposureModeMap: {
@@ -142,6 +172,7 @@ const ExifReader = {
       flash: null,
       exposureMode: null,
       exifIFDPointer: null,
+      comment: null,
     };
 
     const numEntries = view.getUint16(dirStart, !bigEnd);
@@ -207,6 +238,13 @@ const ExifReader = {
             const flnum = view.getUint32(tiffStart + valueOffset, !bigEnd);
             const flden = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
             result.focalLength = Math.round(flnum / flden);
+            break;
+          case this.exifTags.Comment:
+            result.comment = this.getStringFromBuffer(
+              view,
+              tiffStart + valueOffset,
+              components,
+            );
             break;
           case this.exifTags.LensModel:
             result.lensModel = this.getStringFromBuffer(
