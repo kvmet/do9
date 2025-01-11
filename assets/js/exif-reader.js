@@ -183,6 +183,7 @@ const ExifReader = {
           tiffStart + tagInfo.valueOffset,
           tagInfo.components,
         ).trim();
+        console.log(result.make);
         break;
       case this.mainIfdTags.Model:
         result.cameraModel = this.getStringFromBuffer(
@@ -190,6 +191,7 @@ const ExifReader = {
           tiffStart + tagInfo.valueOffset,
           tagInfo.components,
         ).trim();
+        console.log(result.cameraModel);
         break;
       case this.mainIfdTags.Description:
         result.description = this.getStringFromBuffer(
@@ -197,9 +199,11 @@ const ExifReader = {
           tiffStart + tagInfo.valueOffset,
           tagInfo.components,
         ).trim();
+        console.log(result.description);
         break;
       case this.mainIfdTags.ExifIFDPointer:
         result.exifIFDPointer = tagInfo.valueOffset;
+        console.log(result.exifIFDPointer);
         break;
     }
   },
