@@ -1,14 +1,7 @@
 const ExifReader = {
   tags: {
-    Make: 0x010f, // 0x10f - Manufacturer
-    Model: 0x0110, // 0x110 - Camera Model
-    XResolution: 0x011a, // 0x11a - X Resolution
-    YResolution: 0x011b, // 0x11b - Y Resolution
-    Software: 0x0131, // 0x131 - Software
-    DateTime: 0x0132, // 0x132 - Date/Time
-    ExifIFDPointer: 0x8769, // 0x8769 - Pointer to EXIF data
-
-    // Sub-IFD EXIF tags
+    Make: 0x010f,
+    Model: 0x0110,
     ExposureTime: 0x829a,
     FNumber: 0x829d,
     ISO: 0x8827,
@@ -116,39 +109,72 @@ const ExifReader = {
     const numEntries = view.getUint16(dirStart, !bigEnd);
     let offset = dirStart + 2;
 
-    console.log(
-      `Parsing IFD at offset ${dirStart}, found ${numEntries} entries`,
-    );
-
     for (let i = 0; i < numEntries; i++) {
       const tag = view.getUint16(offset, !bigEnd);
       const format = view.getUint16(offset + 2, !bigEnd);
       const components = view.getUint32(offset + 4, !bigEnd);
       const valueOffset = view.getUint32(offset + 8, !bigEnd);
 
-      console.log(
-        `Tag: 0x${tag.toString(16)}, Format: ${format}, Components: ${components}, ValueOffset: ${valueOffset}`,
-      );
+      // Handle different tags
+      switch (tag) {
+        case this.tags.Model:
+          result.cameraModel = this.getStringFromBuffer(
+            view,
+            tiffStart + valueOffset,
+            components - 1,
+          );
+          break;
 
-      // Handle the ExifIFDPointer to get to the extended EXIF data
-      if (tag === this.tags.ExifIFDPointer) {
-        const subResult = this.parseIFD(
-          view,
-          tiffStart + valueOffset,
-          tiffStart,
-          bigEnd,
-        );
-        Object.assign(result, subResult);
-      }
+        case this.tags.ExposureTime:
+          const num = view.getUint32(tiffStart + valueOffset, !bigEnd);
+          const den = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
+          result.shutterSpeed = `${num}/${den}`;
+          break;
 
-      // Handle main IFD tags
-      if (tag === this.tags.Model) {
-        const modelOffset = tiffStart + valueOffset;
-        result.cameraModel = this.getStringFromBuffer(
-          view,
-          modelOffset,
-          components - 1,
-        );
+        case this.tags.FNumber:
+          const fnum = view.getUint32(tiffStart + valueOffset, !bigEnd);
+          const fden = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
+          result.aperture = (fnum / fden).toFixed(1);
+          break;
+
+        case this.tags.ISO:
+          if (format === 3) {
+            // SHORT format
+            result.iso = valueOffset; // For SHORT format, the value is stored directly
+          } else {
+            result.iso = view.getUint16(tiffStart + valueOffset, !bigEnd);
+          }
+          break;
+
+        case this.tags.FocalLength:
+          const flnum = view.getUint32(tiffStart + valueOffset, !bigEnd);
+          const flden = view.getUint32(tiffStart + valueOffset + 4, !bigEnd);
+          result.focalLength = Math.round(flnum / flden);
+          break;
+
+        case this.tags.LensModel:
+          result.lensModel = this.getStringFromBuffer(
+            view,
+            tiffStart + valueOffset,
+            components - 1,
+          );
+          break;
+
+        case this.tags.ExifIFDPointer:
+          // Parse the sub-IFD
+          const subResult = this.parseIFD(
+            view,
+            tiffStart + valueOffset,
+            tiffStart,
+            bigEnd,
+          );
+          // Merge any non-null values from sub-IFD
+          Object.entries(subResult).forEach(([key, value]) => {
+            if (value !== null) {
+              result[key] = value;
+            }
+          });
+          break;
       }
 
       offset += 12;

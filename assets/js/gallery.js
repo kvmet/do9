@@ -154,9 +154,10 @@ class PhotoGallery {
     if (exif.shutterSpeed)
       html += `<li>Shutter: ${this.escapeHtml(exif.shutterSpeed)}s</li>`;
     if (exif.aperture) html += `<li>ƒ/${this.escapeHtml(exif.aperture)}</li>`;
-    if (exif.iso) html += `<li>ISO ${this.escapeHtml(exif.iso)}</li>`;
+    if (exif.iso)
+      html += `<li>ISO ${this.escapeHtml(exif.iso.toString())}</li>`;
     if (exif.focalLength)
-      html += `<li>${this.escapeHtml(exif.focalLength)}mm</li>`;
+      html += `<li>${this.escapeHtml(exif.focalLength.toString())}mm</li>`;
 
     html += "</ul>";
     return html;
