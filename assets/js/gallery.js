@@ -128,14 +128,16 @@ class PhotoGallery {
         const blob = await response.blob();
         const exifData = await ExifReader.read(blob);
 
-        if (Object.keys(exifData).length > 0) {
+        // Only add EXIF data if we have valid information
+        if (exifData && this.hasValidExifData(exifData)) {
           const exifElement = document.createElement("div");
           exifElement.className = "exif-data";
           exifElement.innerHTML = this.formatExifData(exifData);
           imageElement.appendChild(exifElement);
         }
       } catch (err) {
-        console.warn("Could not load EXIF data:", err);
+        console.warn(`Could not load EXIF data for ${baseName}:`, err);
+        // Continue with next image without EXIF data
       }
 
       imageContainer.appendChild(imageElement);
@@ -144,37 +146,74 @@ class PhotoGallery {
     this.container.appendChild(imageContainer);
   }
 
+  hasValidExifData(exif) {
+    // Check if we have at least some valid EXIF data
+    return (
+      exif &&
+      (exif.make ||
+        exif.cameraModel ||
+        exif.shutterSpeed ||
+        exif.aperture ||
+        exif.iso ||
+        exif.focalLength ||
+        exif.dateTime ||
+        exif.lensModel ||
+        exif.flash ||
+        exif.exposureMode)
+    );
+  }
+
   formatExifData(exif) {
-    let html = '<ul class="exif-details">';
+    const items = [];
 
-    if (exif.make) html += `<li>Make: ${this.escapeHtml(exif.make)}</li>`;
-    if (exif.cameraModel)
-      html += `<li>Camera: ${this.escapeHtml(exif.cameraModel)}</li>`;
-    if (exif.description)
-      html += `<li>Description: ${this.escapeHtml(exif.description)}</li>`;
-    if (exif.comment)
-      html += `<li>Comment: ${this.escapeHtml(exif.comment)}</li>`;
-    if (exif.lensModel)
-      html += `<li>Lens: ${this.escapeHtml(exif.lensModel)}</li>`;
-    if (exif.dateTime)
-      html += `<li>Date: ${this.escapeHtml(exif.dateTime)}</li>`;
+    // Only add items that exist and have valid values
+    if (exif.make && exif.cameraModel) {
+      items.push(
+        `<li>Camera: ${this.escapeHtml(exif.make)} ${this.escapeHtml(exif.cameraModel)}</li>`,
+      );
+    } else if (exif.cameraModel) {
+      items.push(`<li>Camera: ${this.escapeHtml(exif.cameraModel)}</li>`);
+    }
+
+    if (exif.lensModel) {
+      items.push(`<li>Lens: ${this.escapeHtml(exif.lensModel)}</li>`);
+    }
+
+    if (exif.dateTime) {
+      items.push(`<li>Date: ${this.escapeHtml(exif.dateTime)}</li>`);
+    }
+
+    const technicalInfo = [];
     if (exif.shutterSpeed)
-      html += `<li>Shutter: ${this.escapeHtml(exif.shutterSpeed)}s</li>`;
-    if (exif.aperture) html += `<li>ƒ/${this.escapeHtml(exif.aperture)}</li>`;
+      technicalInfo.push(`${this.escapeHtml(exif.shutterSpeed)}s`);
+    if (exif.aperture)
+      technicalInfo.push(`ƒ/${this.escapeHtml(exif.aperture)}`);
     if (exif.iso)
-      html += `<li>ISO ${this.escapeHtml(exif.iso.toString())}</li>`;
+      technicalInfo.push(`ISO ${this.escapeHtml(exif.iso.toString())}`);
     if (exif.focalLength)
-      html += `<li>${this.escapeHtml(exif.focalLength.toString())}mm</li>`;
-    if (exif.flash) html += `<li>Flash: ${this.escapeHtml(exif.flash)}</li>`;
-    if (exif.exposureMode)
-      html += `<li>Mode: ${this.escapeHtml(exif.exposureMode)}</li>`;
+      technicalInfo.push(`${this.escapeHtml(exif.focalLength.toString())}mm`);
 
-    html += "</ul>";
-    return html;
+    if (technicalInfo.length > 0) {
+      items.push(`<li>${technicalInfo.join(" • ")}</li>`);
+    }
+
+    if (exif.flash) {
+      items.push(`<li>Flash: ${this.escapeHtml(exif.flash)}</li>`);
+    }
+
+    if (exif.exposureMode) {
+      items.push(`<li>Mode: ${this.escapeHtml(exif.exposureMode)}</li>`);
+    }
+
+    return items.length > 0
+      ? `<ul class="exif-details">${items.join("")}</ul>`
+      : "";
   }
 
   escapeHtml(unsafe) {
+    if (unsafe == null) return "";
     return unsafe
+      .toString()
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
