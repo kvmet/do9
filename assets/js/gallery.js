@@ -1,3 +1,5 @@
+import { ExifReader } from "./exif-reader.js";
+
 class PhotoGallery {
   constructor(elementId) {
     this.container = document.getElementById(elementId);
