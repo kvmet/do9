@@ -55,14 +55,19 @@ class PhotoGallery {
       const files = xmlDoc.getElementsByTagName("File");
       Array.from(files).forEach((file) => {
         const key = file.getElementsByTagName("Key")[0].textContent;
-        const baseNameMatch = key.match(/(.*?)_(preview|full)\.(.*)/);
-        if (baseNameMatch) {
-          const [, baseName, type, ext] = baseNameMatch;
-          if (!images.has(baseName)) {
-            images.set(baseName, {});
-          }
-          images.get(baseName)[type] = `${this.bucketUrl}/${key}`;
+        // Skip any non-image files or already processed images
+        if (
+          !key.match(/\.(jpg|jpeg|png|gif)$/i) ||
+          key.includes("_preview") ||
+          key.includes("_full")
+        ) {
+          return;
         }
+        // Store both the key and full URL
+        images.set(key, {
+          path: `/${key}`,
+          fullUrl: `${this.bucketUrl}/${key}`,
+        });
       });
 
       this.container.innerHTML = "";
@@ -112,9 +117,7 @@ class PhotoGallery {
     }
   }
 
-  getResizedImageUrl(originalUrl, width, options = {}) {
-    const urlPath = originalUrl.replace(this.bucketUrl, "");
-
+  getResizedImageUrl(imagePath, width, options = {}) {
     const cfOptions = [
       `width=${width}`,
       `quality=${options.quality || 75}`,
@@ -122,25 +125,28 @@ class PhotoGallery {
       "format=jpeg", // Force JPEG for EXIF compatibility
     ];
 
-    return `/cdn-cgi/image/${cfOptions.join(",")}${urlPath}`;
+    return `/cdn-cgi/image/${cfOptions.join(",")}${imagePath}`;
   }
 
   async renderImages(images) {
     const imageContainer = document.createElement("div");
     imageContainer.className = "images";
 
-    for (const [baseName, url] of images) {
+    for (const [baseName, imageData] of images) {
       const imageElement = document.createElement("div");
       imageElement.className = "image-item";
 
       // Create thumbnail image
       const img = document.createElement("img");
-      img.src = this.getResizedImageUrl(url, this.imageSizes.thumbnail);
+      img.src = this.getResizedImageUrl(
+        imageData.path,
+        this.imageSizes.thumbnail,
+      );
       img.alt = baseName;
       img.loading = "lazy";
 
       // Show preview in lightbox, then original
-      img.onclick = () => this.showFullImage(url);
+      img.onclick = () => this.showFullImage(imageData);
 
       imageElement.appendChild(img);
 
@@ -165,7 +171,7 @@ class PhotoGallery {
     this.container.appendChild(imageContainer);
   }
 
-  showFullImage(url) {
+  showFullImage(imageData) {
     const lightbox = document.createElement("div");
     lightbox.className = "lightbox";
     lightbox.onclick = () => lightbox.remove();
@@ -173,14 +179,14 @@ class PhotoGallery {
     const img = document.createElement("img");
 
     // First load a medium-sized preview
-    img.src = this.getResizedImageUrl(url, this.imageSizes.preview);
+    img.src = this.getResizedImageUrl(imageData.path, this.imageSizes.preview);
 
     // Then load the original full-size image
     const fullImg = new Image();
     fullImg.onload = () => {
-      img.src = url; // Use original URL for full size
+      img.src = imageData.fullUrl; // Use original URL for full size
     };
-    fullImg.src = url;
+    fullImg.src = imageData.fullUrl;
 
     lightbox.appendChild(img);
     document.body.appendChild(lightbox);
