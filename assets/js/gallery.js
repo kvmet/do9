@@ -132,6 +132,7 @@ class PhotoGallery {
       `quality=${options.quality || 75}`,
       `fit=${options.fit || "scale-down"}`,
       "format=jpeg", // Force JPEG for EXIF compatibility
+      "metadata=keep", // Preserve EXIF data
     ];
 
     const url = `/cdn-cgi/image/${cfOptions.join(",")}${imagePath}`;
@@ -161,6 +162,7 @@ class PhotoGallery {
 
       imageElement.appendChild(img);
 
+      // Try to get EXIF data, but continue if it fails
       try {
         const response = await fetch(img.src);
         const blob = await response.blob();
@@ -174,6 +176,7 @@ class PhotoGallery {
         }
       } catch (err) {
         console.warn(`Could not load EXIF data for ${baseName}:`, err);
+        // Continue without metadata
       }
 
       imageContainer.appendChild(imageElement);
