@@ -169,16 +169,19 @@ class ExifParser {
 
     // Skip the null bytes
     this.tiffOffset = start + 6;
+    console.log("TIFF offset:", this.tiffOffset);
 
-    // Get byte alignment
     const byteAlign = this.view.getUint16(this.tiffOffset);
-    this.littleEndian = byteAlign === 0x4949;
+    console.log("Byte align:", byteAlign.toString(16));
 
-    // Verify TIFF header
-    if (
-      this.view.getUint16(this.tiffOffset + 2, this.littleEndian) !== 0x002a
-    ) {
-      throw new Error("Invalid TIFF data");
+    this.littleEndian = byteAlign === 0x4949;
+    console.log("Little endian:", this.littleEndian);
+
+    const magic = this.view.getUint16(this.tiffOffset + 2, !this.littleEndian);
+    console.log("Magic number:", magic.toString(16));
+
+    if (magic !== 0x002a) {
+      throw new Error(`Invalid TIFF data (magic: ${magic.toString(16)})`);
     }
 
     // Get offset to first IFD
