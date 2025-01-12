@@ -7,11 +7,9 @@ class PhotoGallery {
       new URLSearchParams(window.location.search).get("path") || "photo/";
     this.bucketUrl = "https://i.do9.co";
 
-    // Define standard image sizes
     this.imageSizes = {
       thumbnail: 250, // For the grid view
       preview: 800, // For the lightbox preview
-      full: 1920, // For full-size viewing
     };
 
     this.init();
@@ -115,14 +113,13 @@ class PhotoGallery {
   }
 
   getResizedImageUrl(originalUrl, width, options = {}) {
-    // Convert the full URL to a path-only URL
     const urlPath = originalUrl.replace(this.bucketUrl, "");
 
-    // Build the Cloudflare Image Resizing URL
     const cfOptions = [
       `width=${width}`,
       `quality=${options.quality || 75}`,
       `fit=${options.fit || "scale-down"}`,
+      "format=jpeg", // Force JPEG for EXIF compatibility
     ];
 
     return `/cdn-cgi/image/${cfOptions.join(",")}${urlPath}`;
@@ -132,26 +129,22 @@ class PhotoGallery {
     const imageContainer = document.createElement("div");
     imageContainer.className = "images";
 
-    for (const [baseName, urls] of images) {
+    for (const [baseName, url] of images) {
       const imageElement = document.createElement("div");
       imageElement.className = "image-item";
 
-      // Create thumbnail image with optimized size
+      // Create thumbnail image
       const img = document.createElement("img");
-      img.src = this.getResizedImageUrl(
-        urls.preview,
-        this.imageSizes.thumbnail,
-      );
+      img.src = this.getResizedImageUrl(url, this.imageSizes.thumbnail);
       img.alt = baseName;
       img.loading = "lazy";
 
-      // When clicking, show a larger preview in the lightbox
-      img.onclick = () => this.showFullImage(urls.full);
+      // Show preview in lightbox, then original
+      img.onclick = () => this.showFullImage(url);
 
       imageElement.appendChild(img);
 
       try {
-        // Use the thumbnail for EXIF data to save bandwidth
         const response = await fetch(img.src);
         const blob = await response.blob();
         const exifData = await ExifParser.readFile(blob);
@@ -182,12 +175,12 @@ class PhotoGallery {
     // First load a medium-sized preview
     img.src = this.getResizedImageUrl(url, this.imageSizes.preview);
 
-    // Then load the full-size image if needed
+    // Then load the original full-size image
     const fullImg = new Image();
     fullImg.onload = () => {
-      img.src = this.getResizedImageUrl(url, this.imageSizes.full);
+      img.src = url; // Use original URL for full size
     };
-    fullImg.src = this.getResizedImageUrl(url, this.imageSizes.full);
+    fullImg.src = url;
 
     lightbox.appendChild(img);
     document.body.appendChild(lightbox);
