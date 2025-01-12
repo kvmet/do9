@@ -1,4 +1,4 @@
-import { ExifReader } from "./exif-reader.js";
+import { ExifParser } from "./exif-reader.js";
 
 class PhotoGallery {
   constructor(elementId) {
