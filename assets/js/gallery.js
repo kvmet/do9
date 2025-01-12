@@ -135,7 +135,7 @@ class PhotoGallery {
       "metadata=keep", // Preserve EXIF data
     ];
 
-    const url = `/cdn-cgi/image/${cfOptions.join(",")}${imagePath}`;
+    const url = `https://i.do9.co/cdn-cgi/image/{cfOptions.join(",")}${imagePath}`;
     console.log("Generated resized URL:", url);
     return url;
   }
@@ -163,11 +163,10 @@ class PhotoGallery {
 
       imageElement.appendChild(img);
 
-      // Try to get EXIF data, but continue if it fails
+      // Try to get EXIF data from the smaller transformed version
       try {
-        // Use same domain for EXIF fetch
-        const exifUrl = new URL(thumbnailUrl, window.location.origin).href;
-        const response = await fetch(exifUrl);
+        // Use same thumbnail URL for EXIF data
+        const response = await fetch(thumbnailUrl);
         const blob = await response.blob();
         const exifData = await ExifParser.readFile(blob);
 
