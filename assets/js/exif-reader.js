@@ -116,10 +116,16 @@ class ExifParser {
 
   findExifOffset() {
     let offset = 2;
+    console.log("Starting EXIF search at offset:", offset);
+
     while (offset < this.view.byteLength) {
       const marker = this.view.getUint16(offset, false);
+      console.log("Marker found:", marker.toString(16), "at offset:", offset);
+
       if (marker === 0xffe1) {
-        return offset + 4;
+        const returnOffset = offset + 4;
+        console.log("Found EXIF marker. Returning offset:", returnOffset);
+        return returnOffset;
       }
       offset += 2 + this.view.getUint16(offset + 2, false);
     }
@@ -127,16 +133,37 @@ class ExifParser {
   }
 
   parseExifData(start) {
+    console.log("Starting EXIF parsing at offset:", start);
+
+    // Debug: Log the first few bytes
+    const firstBytes = [];
+    for (let i = 0; i < 10; i++) {
+      firstBytes.push(this.view.getUint8(start + i).toString(16));
+    }
+    console.log("First 10 bytes at start:", firstBytes.join(" "));
+
     const exifResult = {
       image: {},
       exif: {},
       raw: {},
     };
 
-    // Read Exif header
+    // Read and log each character of the EXIF header
+    const headerChars = [];
+    for (let i = 0; i < 4; i++) {
+      const char = this.view.getUint8(start + i);
+      headerChars.push({
+        char: char,
+        asAscii: String.fromCharCode(char),
+      });
+    }
+    console.log("EXIF header chars:", headerChars);
+
     const exifHeader = this.getAsciiValue(start, 4);
+    console.log("Parsed EXIF header:", exifHeader);
+
     if (exifHeader !== "Exif") {
-      throw new Error(`Invalid EXIF data`);
+      throw new Error(`Invalid EXIF data (header: "${exifHeader}")`);
     }
 
     // Skip the null bytes
