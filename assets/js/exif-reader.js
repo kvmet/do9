@@ -274,13 +274,6 @@ class ExifParser {
   }
 
   readTagValue(format, components, valueOffset, offsetLocation) {
-    const value = this.getRawValue(
-      format,
-      components,
-      valueOffset,
-      offsetLocation,
-    );
-
     // For values that fit in 4 bytes, the value offset actually contains the value
     const actualOffset =
       components <= 4 &&
