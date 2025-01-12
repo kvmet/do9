@@ -41,7 +41,7 @@ class PhotoGallery {
       }
 
       const text = await response.text();
-      console.log("Received XML:", text);
+      //console.log("Received XML:", text);
 
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(text, "text/xml");
@@ -66,13 +66,8 @@ class PhotoGallery {
 
       Array.from(files).forEach((file) => {
         const key = file.getElementsByTagName("Key")[0].textContent;
-        console.log("Processing file:", key);
         // Skip any non-image files or already processed images
-        if (
-          !key.match(/\.(jpg|jpeg|png|gif)$/i) ||
-          key.includes("_preview") ||
-          key.includes("_full")
-        ) {
+        if (!key.match(/\.(jpg|jpeg|png|gif)$/i)) {
           console.log("Skipping file:", key);
           return;
         }
