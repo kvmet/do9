@@ -126,9 +126,8 @@ class PhotoGallery {
       try {
         const response = await fetch(urls.preview);
         const blob = await response.blob();
-        const exifData = await ExifReader.read(blob);
+        const exifData = await ExifParser.readFile(blob);
 
-        // Only add EXIF data if we have valid information
         if (exifData && this.hasValidExifData(exifData)) {
           const exifElement = document.createElement("div");
           exifElement.className = "exif-data";
@@ -137,7 +136,6 @@ class PhotoGallery {
         }
       } catch (err) {
         console.warn(`Could not load EXIF data for ${baseName}:`, err);
-        // Continue with next image without EXIF data
       }
 
       imageContainer.appendChild(imageElement);
@@ -147,62 +145,64 @@ class PhotoGallery {
   }
 
   hasValidExifData(exif) {
-    // Check if we have at least some valid EXIF data
     return (
       exif &&
-      (exif.make ||
-        exif.cameraModel ||
-        exif.shutterSpeed ||
-        exif.aperture ||
-        exif.iso ||
-        exif.focalLength ||
-        exif.dateTime ||
-        exif.lensModel ||
-        exif.flash ||
-        exif.exposureMode)
+      (exif.camera.make ||
+        exif.camera.model ||
+        exif.technical.shutterSpeed ||
+        exif.technical.aperture ||
+        exif.technical.iso ||
+        exif.technical.focalLength ||
+        exif.meta.dateTime ||
+        exif.meta.lensModel ||
+        exif.technical.flash ||
+        exif.technical.exposureMode)
     );
   }
 
   formatExifData(exif) {
     const items = [];
 
-    // Only add items that exist and have valid values
-    if (exif.make && exif.cameraModel) {
+    if (exif.camera.make && exif.camera.model) {
       items.push(
-        `<li>Camera: ${this.escapeHtml(exif.make)} ${this.escapeHtml(exif.cameraModel)}</li>`,
+        `<li>Camera: ${this.escapeHtml(exif.camera.make)} ${this.escapeHtml(exif.camera.model)}</li>`,
       );
-    } else if (exif.cameraModel) {
-      items.push(`<li>Camera: ${this.escapeHtml(exif.cameraModel)}</li>`);
+    } else if (exif.camera.model) {
+      items.push(`<li>Camera: ${this.escapeHtml(exif.camera.model)}</li>`);
     }
 
-    if (exif.lensModel) {
-      items.push(`<li>Lens: ${this.escapeHtml(exif.lensModel)}</li>`);
+    if (exif.meta.lensModel) {
+      items.push(`<li>Lens: ${this.escapeHtml(exif.meta.lensModel)}</li>`);
     }
 
-    if (exif.dateTime) {
-      items.push(`<li>Date: ${this.escapeHtml(exif.dateTime)}</li>`);
+    if (exif.meta.dateTime) {
+      items.push(`<li>Date: ${this.escapeHtml(exif.meta.dateTime)}</li>`);
     }
 
     const technicalInfo = [];
-    if (exif.shutterSpeed)
-      technicalInfo.push(`${this.escapeHtml(exif.shutterSpeed)}s`);
-    if (exif.aperture)
-      technicalInfo.push(`ƒ/${this.escapeHtml(exif.aperture)}`);
-    if (exif.iso)
-      technicalInfo.push(`ISO ${this.escapeHtml(exif.iso.toString())}`);
-    if (exif.focalLength)
-      technicalInfo.push(`${this.escapeHtml(exif.focalLength.toString())}mm`);
+    if (exif.technical.shutterSpeed)
+      technicalInfo.push(`${this.escapeHtml(exif.technical.shutterSpeed)}s`);
+    if (exif.technical.aperture)
+      technicalInfo.push(`ƒ/${this.escapeHtml(exif.technical.aperture)}`);
+    if (exif.technical.iso)
+      technicalInfo.push(
+        `ISO ${this.escapeHtml(exif.technical.iso.toString())}`,
+      );
+    if (exif.technical.focalLength)
+      technicalInfo.push(`${this.escapeHtml(exif.technical.focalLength)}mm`);
 
     if (technicalInfo.length > 0) {
       items.push(`<li>${technicalInfo.join(" • ")}</li>`);
     }
 
-    if (exif.flash) {
-      items.push(`<li>Flash: ${this.escapeHtml(exif.flash)}</li>`);
+    if (exif.technical.flash) {
+      items.push(`<li>Flash: ${this.escapeHtml(exif.technical.flash)}</li>`);
     }
 
-    if (exif.exposureMode) {
-      items.push(`<li>Mode: ${this.escapeHtml(exif.exposureMode)}</li>`);
+    if (exif.technical.exposureMode) {
+      items.push(
+        `<li>Mode: ${this.escapeHtml(exif.technical.exposureMode)}</li>`,
+      );
     }
 
     return items.length > 0
