@@ -149,12 +149,14 @@ class PhotoGallery {
       exif &&
       (exif.camera.make ||
         exif.camera.model ||
+        exif.camera.imageDescription ||
         exif.technical.shutterSpeed ||
         exif.technical.aperture ||
         exif.technical.iso ||
         exif.technical.focalLength ||
         exif.meta.dateTime ||
         exif.meta.lensModel ||
+        exif.meta.userComment ||
         exif.technical.flash ||
         exif.technical.exposureMode)
     );
@@ -163,6 +165,11 @@ class PhotoGallery {
   formatExifData(exif) {
     const items = [];
 
+    if (exif.camera.imageDescription) {
+      items.push(
+        `<li><strong>Description:</strong> ${this.escapeHtml(exif.camera.imageDescription)}</li>`,
+      );
+    }
     if (exif.camera.make && exif.camera.model) {
       items.push(
         `<li>Camera: ${this.escapeHtml(exif.camera.make)} ${this.escapeHtml(exif.camera.model)}</li>`,
@@ -202,6 +209,12 @@ class PhotoGallery {
     if (exif.technical.exposureMode) {
       items.push(
         `<li>Mode: ${this.escapeHtml(exif.technical.exposureMode)}</li>`,
+      );
+    }
+
+    if (exif.meta.userComment) {
+      items.push(
+        `<li><strong>Comment:</strong> ${this.escapeHtml(exif.meta.userComment)}</li>`,
       );
     }
 

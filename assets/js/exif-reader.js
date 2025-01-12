@@ -15,7 +15,11 @@ const ExifTags = {
   ImageTags: {
     Make: { id: 0x010f, name: "Make", format: ExifFormat.ASCII },
     Model: { id: 0x0110, name: "Model", format: ExifFormat.ASCII },
-    Description: { id: 0x010e, name: "Description", format: ExifFormat.ASCII },
+    ImageDescription: {
+      id: 0x010e,
+      name: "Description",
+      format: ExifFormat.ASCII,
+    },
     ExifIFDPointer: {
       id: 0x8769,
       name: "ExifIFDPointer",
@@ -48,6 +52,11 @@ const ExifTags = {
       id: 0xa402,
       name: "ExposureMode",
       format: ExifFormat.SHORT,
+    },
+    UserComment: {
+      id: 0x9286,
+      name: "UserComment",
+      format: ExifFormat.UNDEFINED,
     },
   },
 };
@@ -255,7 +264,7 @@ class ExifParser {
       camera: {
         make: rawData.image.Make,
         model: rawData.image.Model,
-        description: rawData.image.Description,
+        imageDescription: rawData.image.ImageDescription,
       },
       technical: {
         shutterSpeed: this.formatRational(rawData.exif.ExposureTime),
@@ -268,6 +277,7 @@ class ExifParser {
       meta: {
         dateTime: rawData.exif.DateTimeOriginal,
         lensModel: rawData.exif.LensModel,
+        userComment: rawData.exif.UserComment,
       },
       raw: rawData, // Keep raw data for debugging
     };
@@ -311,6 +321,20 @@ class ExifParser {
         }
 
       case ExifFormat.UNDEFINED:
+        if (tagInfo && tagInfo.name === "UserComment") {
+          // UserComment typically has an 8-byte encoding header followed by the actual text
+          const encoding = this.getAsciiValue(actualOffset, 8).trim();
+          if (
+            encoding === "ASCII" ||
+            encoding === "JIS" ||
+            encoding === "UNICODE"
+          ) {
+            return this.getAsciiValue(actualOffset + 8, components - 8);
+          } else {
+            // If no valid encoding header is found, try reading the whole thing as ASCII
+            return this.getAsciiValue(actualOffset, components);
+          }
+        }
         return this.getUndefinedValue(actualOffset, components);
 
       case ExifFormat.SLONG:
