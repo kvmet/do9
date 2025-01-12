@@ -29,6 +29,10 @@ class PhotoGallery {
     this.container.innerHTML = '<div class="loading">Loading gallery...</div>';
 
     try {
+      console.log(
+        "Fetching from:",
+        `https://photo-list.kmet28.workers.dev/${this.currentPath}`,
+      );
       const response = await fetch(
         `https://photo-list.kmet28.workers.dev/${this.currentPath}`,
       );
@@ -37,11 +41,15 @@ class PhotoGallery {
       }
 
       const text = await response.text();
+      console.log("Received XML:", text);
+
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(text, "text/xml");
 
       const directories = new Set();
       const dirs = xmlDoc.getElementsByTagName("Directory");
+      console.log("Found directories:", dirs.length);
+
       Array.from(dirs).forEach((dir) => {
         const path = dir.textContent;
         const relativePath = path.slice(this.currentPath.length);
@@ -50,17 +58,22 @@ class PhotoGallery {
           if (dirName) directories.add(dirName);
         }
       });
+      console.log("Processed directories:", [...directories]);
 
       const images = new Map();
       const files = xmlDoc.getElementsByTagName("File");
+      console.log("Found files:", files.length);
+
       Array.from(files).forEach((file) => {
         const key = file.getElementsByTagName("Key")[0].textContent;
+        console.log("Processing file:", key);
         // Skip any non-image files or already processed images
         if (
           !key.match(/\.(jpg|jpeg|png|gif)$/i) ||
           key.includes("_preview") ||
           key.includes("_full")
         ) {
+          console.log("Skipping file:", key);
           return;
         }
         // Store both the key and full URL
@@ -69,6 +82,7 @@ class PhotoGallery {
           fullUrl: `${this.bucketUrl}/${key}`,
         });
       });
+      console.log("Processed images:", [...images.entries()]);
 
       this.container.innerHTML = "";
       this.addBreadcrumbs();
@@ -125,7 +139,9 @@ class PhotoGallery {
       "format=jpeg", // Force JPEG for EXIF compatibility
     ];
 
-    return `/cdn-cgi/image/${cfOptions.join(",")}${imagePath}`;
+    const url = `/cdn-cgi/image/${cfOptions.join(",")}${imagePath}`;
+    console.log("Generated resized URL:", url);
+    return url;
   }
 
   async renderImages(images) {
