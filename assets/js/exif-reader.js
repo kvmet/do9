@@ -116,10 +116,21 @@ class ExifParser {
 
   findExifOffset() {
     let offset = 2;
-    while (offset < this.view.byteLength) {
+    while (offset < this.view.byteLength - 2) {
+      // Added -2 to prevent buffer overrun
       const marker = this.view.getUint16(offset, false);
       if (marker === 0xffe1) {
+        // Get the length of the APP1 segment
+        const length = this.view.getUint16(offset + 2, false);
+        // Verify there's enough data
+        if (offset + 4 + length > this.view.byteLength) {
+          throw new Error("Incomplete EXIF segment");
+        }
         return offset + 4;
+      }
+      // Check if we can read the next marker length
+      if (offset + 4 > this.view.byteLength) {
+        throw new Error("No EXIF data found");
       }
       offset += 2 + this.view.getUint16(offset + 2, false);
     }
@@ -128,29 +139,55 @@ class ExifParser {
 
   parseExifData(start) {
     const exifResult = {
-      image: {}, // IFD0 data
-      exif: {}, // EXIF SubIFD data
-      raw: {}, // Raw values for debugging
+      image: {},
+      exif: {},
+      raw: {},
     };
 
-    if (this.getAsciiValue(start, 4) !== "Exif") {
-      throw new Error("Invalid EXIF data");
+    // Verify we have enough data to read the EXIF header
+    if (start + 10 > this.view.byteLength) {
+      throw new Error("Insufficient data for EXIF header");
+    }
+
+    // Read "Exif\0\0" marker
+    const exifHeader = this.getAsciiValue(start, 6);
+    if (exifHeader !== "Exif\0\0") {
+      throw new Error("Invalid EXIF header");
     }
 
     this.tiffOffset = start + 6;
-    this.littleEndian = this.view.getUint16(this.tiffOffset) === 0x4949;
 
-    if (
-      this.view.getUint16(this.tiffOffset + 2, !this.littleEndian) !== 0x002a
-    ) {
-      throw new Error("Invalid TIFF data");
+    // Verify we have enough data to read TIFF header
+    if (this.tiffOffset + 8 > this.view.byteLength) {
+      throw new Error("Insufficient data for TIFF header");
     }
 
-    // Parse IFD0 (main image data)
+    // Check byte order
+    const byteOrder = this.view.getUint16(this.tiffOffset, false);
+    this.littleEndian = byteOrder === 0x4949;
+
+    if (byteOrder !== 0x4949 && byteOrder !== 0x4d4d) {
+      throw new Error("Invalid byte order marker");
+    }
+
+    // Check TIFF magic number (42)
+    const magic = this.view.getUint16(this.tiffOffset + 2, !this.littleEndian);
+    if (magic !== 0x002a) {
+      throw new Error("Invalid TIFF magic number");
+    }
+
+    // Read offset to first IFD
     const ifd0Offset = this.view.getUint32(
       this.tiffOffset + 4,
       !this.littleEndian,
     );
+
+    // Verify IFD offset is within bounds
+    if (this.tiffOffset + ifd0Offset + 2 > this.view.byteLength) {
+      throw new Error("IFD offset out of bounds");
+    }
+
+    // Parse IFD0
     this.parseIfd(
       this.tiffOffset + ifd0Offset,
       ExifTags.ImageTags,
@@ -159,15 +196,15 @@ class ExifParser {
 
     // Parse EXIF SubIFD if it exists
     if (exifResult.image.ExifIFDPointer) {
-      this.parseIfd(
-        this.tiffOffset + exifResult.image.ExifIFDPointer,
-        ExifTags.ExifTags,
-        exifResult.exif,
-      );
+      const exifOffset = this.tiffOffset + exifResult.image.ExifIFDPointer;
+      if (exifOffset + 2 <= this.view.byteLength) {
+        this.parseIfd(exifOffset, ExifTags.ExifTags, exifResult.exif);
+      }
     }
 
     return this.formatExifData(exifResult);
   }
+
   parseIfd(offset, tagDefinitions, result) {
     const numEntries = this.view.getUint16(offset, !this.littleEndian);
     let entryOffset = offset + 2;
