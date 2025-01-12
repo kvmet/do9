@@ -151,8 +151,18 @@ class ExifParser {
 
     // Read "Exif\0\0" marker
     const exifHeader = this.getAsciiValue(start, 6);
+
+    // Debug logging
+    console.log("EXIF Header:", exifHeader);
+    console.log(
+      "EXIF Header bytes:",
+      Array.from(new Uint8Array(this.view.buffer.slice(start, start + 6))),
+    );
+
     if (exifHeader !== "Exif\0\0") {
-      throw new Error("Invalid EXIF header");
+      throw new Error(
+        `Invalid EXIF header: "${exifHeader}" (expected "Exif\\0\\0")`,
+      );
     }
 
     this.tiffOffset = start + 6;
