@@ -150,10 +150,11 @@ class PhotoGallery {
 
       // Create thumbnail image
       const img = document.createElement("img");
-      img.src = this.getResizedImageUrl(
+      const thumbnailUrl = this.getResizedImageUrl(
         imageData.path,
         this.imageSizes.thumbnail,
       );
+      img.src = thumbnailUrl;
       img.alt = baseName;
       img.loading = "lazy";
 
@@ -164,7 +165,9 @@ class PhotoGallery {
 
       // Try to get EXIF data, but continue if it fails
       try {
-        const response = await fetch(img.src);
+        // Use same domain for EXIF fetch
+        const exifUrl = new URL(thumbnailUrl, window.location.origin).href;
+        const response = await fetch(exifUrl);
         const blob = await response.blob();
         const exifData = await ExifParser.readFile(blob);
 
