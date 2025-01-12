@@ -85,6 +85,7 @@ const ValueMaps = {
     2: "Auto bracket",
   },
 };
+
 class ExifParser {
   constructor(buffer) {
     this.view = new DataView(buffer);
@@ -175,7 +176,7 @@ class ExifParser {
 
     // Verify TIFF header
     if (
-      this.view.getUint16(this.tiffOffset + 2, !this.littleEndian) !== 0x002a
+      this.view.getUint16(this.tiffOffset + 2, this.littleEndian) !== 0x002a
     ) {
       throw new Error("Invalid TIFF data");
     }
