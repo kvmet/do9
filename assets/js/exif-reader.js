@@ -177,7 +177,7 @@ class ExifParser {
     this.littleEndian = byteAlign === 0x4949;
     console.log("Little endian:", this.littleEndian);
 
-    const magic = this.view.getUint16(this.tiffOffset + 2, !this.littleEndian);
+    const magic = this.view.getUint16(this.tiffOffset + 2, this.littleEndian);
     console.log("Magic number:", magic.toString(16));
 
     if (magic !== 0x002a) {
@@ -187,7 +187,7 @@ class ExifParser {
     // Get offset to first IFD
     const ifd0Offset = this.view.getUint32(
       this.tiffOffset + 4,
-      !this.littleEndian,
+      this.littleEndian,
     );
 
     // Parse IFD0
@@ -220,19 +220,19 @@ class ExifParser {
   }
 
   parseIfd(offset, tagDefinitions, result) {
-    const numEntries = this.view.getUint16(offset, !this.littleEndian);
+    const numEntries = this.view.getUint16(offset, this.littleEndian);
     let entryOffset = offset + 2;
 
     for (let i = 0; i < numEntries; i++) {
-      const tag = this.view.getUint16(entryOffset, !this.littleEndian);
-      const format = this.view.getUint16(entryOffset + 2, !this.littleEndian);
+      const tag = this.view.getUint16(entryOffset, this.littleEndian);
+      const format = this.view.getUint16(entryOffset + 2, this.littleEndian);
       const components = this.view.getUint32(
         entryOffset + 4,
-        !this.littleEndian,
+        this.littleEndian,
       );
       const valueOffset = this.view.getUint32(
         entryOffset + 8,
-        !this.littleEndian,
+        this.littleEndian,
       );
 
       const tagInfo = Object.values(tagDefinitions).find((t) => t.id === tag);
@@ -298,14 +298,14 @@ class ExifParser {
 
       case ExifFormat.SHORT:
         if (components === 1) {
-          return this.view.getUint16(actualOffset, !this.littleEndian);
+          return this.view.getUint16(actualOffset, this.littleEndian);
         } else {
           return this.getShortValues(actualOffset, components);
         }
 
       case ExifFormat.LONG:
         if (components === 1) {
-          return this.view.getUint32(actualOffset, !this.littleEndian);
+          return this.view.getUint32(actualOffset, this.littleEndian);
         } else {
           return this.getLongValues(actualOffset, components);
         }
@@ -322,7 +322,7 @@ class ExifParser {
 
       case ExifFormat.SLONG:
         if (components === 1) {
-          return this.view.getInt32(actualOffset, !this.littleEndian);
+          return this.view.getInt32(actualOffset, this.littleEndian);
         } else {
           return this.getSLongValues(actualOffset, components);
         }
@@ -354,7 +354,7 @@ class ExifParser {
   getShortValues(offset, count) {
     const values = [];
     for (let i = 0; i < count; i++) {
-      values.push(this.view.getUint16(offset + i * 2, !this.littleEndian));
+      values.push(this.view.getUint16(offset + i * 2, this.littleEndian));
     }
     return values;
   }
@@ -362,7 +362,7 @@ class ExifParser {
   getLongValues(offset, count) {
     const values = [];
     for (let i = 0; i < count; i++) {
-      values.push(this.view.getUint32(offset + i * 4, !this.littleEndian));
+      values.push(this.view.getUint32(offset + i * 4, this.littleEndian));
     }
     return values;
   }
@@ -370,14 +370,14 @@ class ExifParser {
   getSLongValues(offset, count) {
     const values = [];
     for (let i = 0; i < count; i++) {
-      values.push(this.view.getInt32(offset + i * 4, !this.littleEndian));
+      values.push(this.view.getInt32(offset + i * 4, this.littleEndian));
     }
     return values;
   }
 
   getRationalValue(offset) {
-    const numerator = this.view.getUint32(offset, !this.littleEndian);
-    const denominator = this.view.getUint32(offset + 4, !this.littleEndian);
+    const numerator = this.view.getUint32(offset, this.littleEndian);
+    const denominator = this.view.getUint32(offset + 4, this.littleEndian);
     return { numerator, denominator };
   }
 
@@ -390,8 +390,8 @@ class ExifParser {
   }
 
   getSRationalValue(offset) {
-    const numerator = this.view.getInt32(offset, !this.littleEndian);
-    const denominator = this.view.getInt32(offset + 4, !this.littleEndian);
+    const numerator = this.view.getInt32(offset, this.littleEndian);
+    const denominator = this.view.getInt32(offset + 4, this.littleEndian);
     return { numerator, denominator };
   }
 
