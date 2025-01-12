@@ -7,6 +7,13 @@ class PhotoGallery {
       new URLSearchParams(window.location.search).get("path") || "photo/";
     this.bucketUrl = "https://i.do9.co";
 
+    // Define standard image sizes
+    this.imageSizes = {
+      thumbnail: 250, // For the grid view
+      preview: 800, // For the lightbox preview
+      full: 1920, // For full-size viewing
+    };
+
     this.init();
 
     window.addEventListener("popstate", () => {
@@ -107,6 +114,20 @@ class PhotoGallery {
     }
   }
 
+  getResizedImageUrl(originalUrl, width, options = {}) {
+    // Convert the full URL to a path-only URL
+    const urlPath = originalUrl.replace(this.bucketUrl, "");
+
+    // Build the Cloudflare Image Resizing URL
+    const cfOptions = [
+      `width=${width}`,
+      `quality=${options.quality || 75}`,
+      `fit=${options.fit || "scale-down"}`,
+    ];
+
+    return `/cdn-cgi/image/${cfOptions.join(",")}${urlPath}`;
+  }
+
   async renderImages(images) {
     const imageContainer = document.createElement("div");
     imageContainer.className = "images";
@@ -115,16 +136,23 @@ class PhotoGallery {
       const imageElement = document.createElement("div");
       imageElement.className = "image-item";
 
+      // Create thumbnail image with optimized size
       const img = document.createElement("img");
-      img.src = urls.preview;
+      img.src = this.getResizedImageUrl(
+        urls.preview,
+        this.imageSizes.thumbnail,
+      );
       img.alt = baseName;
       img.loading = "lazy";
+
+      // When clicking, show a larger preview in the lightbox
       img.onclick = () => this.showFullImage(urls.full);
 
       imageElement.appendChild(img);
 
       try {
-        const response = await fetch(urls.preview);
+        // Use the thumbnail for EXIF data to save bandwidth
+        const response = await fetch(img.src);
         const blob = await response.blob();
         const exifData = await ExifParser.readFile(blob);
 
@@ -142,6 +170,27 @@ class PhotoGallery {
     }
 
     this.container.appendChild(imageContainer);
+  }
+
+  showFullImage(url) {
+    const lightbox = document.createElement("div");
+    lightbox.className = "lightbox";
+    lightbox.onclick = () => lightbox.remove();
+
+    const img = document.createElement("img");
+
+    // First load a medium-sized preview
+    img.src = this.getResizedImageUrl(url, this.imageSizes.preview);
+
+    // Then load the full-size image if needed
+    const fullImg = new Image();
+    fullImg.onload = () => {
+      img.src = this.getResizedImageUrl(url, this.imageSizes.full);
+    };
+    fullImg.src = this.getResizedImageUrl(url, this.imageSizes.full);
+
+    lightbox.appendChild(img);
+    document.body.appendChild(lightbox);
   }
 
   hasValidExifData(exif) {
