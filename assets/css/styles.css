@@ -1,9 +1,9 @@
 :root {
   --bg-color: #1a1a1a;
-  --text-color: #e0e0e0;
-  --accent-color: #606060;
+  --text-color: #9cacab;
+  --accent-color: #9cacab;
   --card-bg: #2a2a2a;
-  --hover-color: #404040;
+  --hover-color: #cead1d;
   --border-color: #333;
   --metadata-bg: #242424;
 }
@@ -19,10 +19,6 @@ body {
 }
 
 .site-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   background: var(--card-bg);
   padding: 8px 20px;
   font-size: 0.8rem;
@@ -30,8 +26,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 2rem;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
-  z-index: 100;
+  border-top: 1px solid var(--border-color);
 }
 
 .copyright {
@@ -50,7 +45,7 @@ body {
 }
 
 .site-nav a:hover {
-  color: var(--text-color);
+  color: var(--hover-color);
 }
 
 .photo-gallery {
@@ -58,7 +53,7 @@ body {
   margin: 0 auto;
   padding: 20px;
 
-  padding-bottom: 50px;
+  margin-bottom: 2rem;
 }
 
 .breadcrumbs {
@@ -75,7 +70,7 @@ body {
 }
 
 .breadcrumbs a:hover {
-  color: var(--accent-color);
+  color: var(--hover-color);
 }
 
 .directories {
