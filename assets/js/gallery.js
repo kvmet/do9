@@ -127,7 +127,7 @@ class PhotoGallery {
   }
 
   getResizedImageUrl(imagePath) {
-    return `https://photo-preview.kmet28.workers.dev/${imagePath}`;
+    return `https://photo-preview.kmet28.workers.dev${imagePath}`;
   }
 
   async renderImages(images) {
