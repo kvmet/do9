@@ -138,12 +138,10 @@ class PhotoGallery {
       const imageElement = document.createElement("div");
       imageElement.className = "image-item";
 
-      // Create thumbnail image
+      // Create thumbnail image and get its URL - store it for reuse
+      const thumbnailUrl = this.getResizedImageUrl(imageData.path);
+
       const img = document.createElement("img");
-      const thumbnailUrl = this.getResizedImageUrl(
-        imageData.path,
-        this.imageSizes.thumbnail,
-      );
       img.src = thumbnailUrl;
       img.alt = baseName;
       img.loading = "lazy";
@@ -153,9 +151,8 @@ class PhotoGallery {
 
       imageElement.appendChild(img);
 
-      // Try to get EXIF data from the smaller transformed version
+      // Use the same URL for EXIF data
       try {
-        // Use same thumbnail URL for EXIF data
         const response = await fetch(thumbnailUrl);
         const blob = await response.blob();
         const exifData = await ExifParser.readFile(blob);
@@ -175,27 +172,6 @@ class PhotoGallery {
     }
 
     this.container.appendChild(imageContainer);
-  }
-
-  showFullImage(imageData) {
-    const lightbox = document.createElement("div");
-    lightbox.className = "lightbox";
-    lightbox.onclick = () => lightbox.remove();
-
-    const img = document.createElement("img");
-
-    // First load a medium-sized preview
-    img.src = this.getResizedImageUrl(imageData.path, this.imageSizes.preview);
-
-    // Then load the original full-size image
-    const fullImg = new Image();
-    fullImg.onload = () => {
-      img.src = imageData.fullUrl; // Use original URL for full size
-    };
-    fullImg.src = imageData.fullUrl;
-
-    lightbox.appendChild(img);
-    document.body.appendChild(lightbox);
   }
 
   hasValidExifData(exif) {
@@ -288,13 +264,22 @@ class PhotoGallery {
       .replace(/'/g, "&#039;");
   }
 
-  showFullImage(url) {
+  showFullImage(imageData) {
     const lightbox = document.createElement("div");
     lightbox.className = "lightbox";
     lightbox.onclick = () => lightbox.remove();
 
     const img = document.createElement("img");
-    img.src = url;
+
+    // First load a medium-sized preview
+    img.src = this.getResizedImageUrl(imageData.path);
+
+    // Then load the original full-size image
+    const fullImg = new Image();
+    fullImg.onload = () => {
+      img.src = imageData.fullUrl; // This already has the full URL with i.do9.co
+    };
+    fullImg.src = imageData.fullUrl;
 
     lightbox.appendChild(img);
     document.body.appendChild(lightbox);
