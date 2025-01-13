@@ -126,18 +126,8 @@ class PhotoGallery {
     }
   }
 
-  getResizedImageUrl(imagePath, width, options = {}) {
-    const cfOptions = [
-      `width=${width}`,
-      `quality=${options.quality || 75}`,
-      `fit=${options.fit || "scale-down"}`,
-      "format=jpeg", // Force JPEG for EXIF compatibility
-      "metadata=keep", // Preserve EXIF data
-    ];
-
-    const url = `https://i.do9.co/cdn-cgi/image/${cfOptions.join(",")}${imagePath}`;
-    console.log("Generated resized URL:", url);
-    return url;
+  getResizedImageUrl(imagePath) {
+    return `https://photo-preview.kmet28.workers.dev/${imagePath}`;
   }
 
   async renderImages(images) {
