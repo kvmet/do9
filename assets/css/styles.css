@@ -19,7 +19,7 @@ body {
 }
 
 .site-footer {
-  background: var(--card-bg);
+  background: var(--bg-color);
   padding: 8px 20px;
   font-size: 0.8rem;
   display: flex;
@@ -91,7 +91,7 @@ body {
 }
 
 .directory:hover {
-  background: var(--hover-color);
+  color: var(--hover-color);
 }
 
 .images {
@@ -123,7 +123,7 @@ body {
 }
 
 .image-item img:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .exif-data {
