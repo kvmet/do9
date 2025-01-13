@@ -135,7 +135,7 @@ class PhotoGallery {
       "metadata=keep", // Preserve EXIF data
     ];
 
-    const url = `https://i.do9.co/cdn-cgi/image/{cfOptions.join(",")}${imagePath}`;
+    const url = `https://i.do9.co/cdn-cgi/image/${cfOptions.join(",")}${imagePath}`;
     console.log("Generated resized URL:", url);
     return url;
   }
