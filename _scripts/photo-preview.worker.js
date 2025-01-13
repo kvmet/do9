@@ -3,6 +3,20 @@ addEventListener("fetch", (event) => {
 });
 
 async function handleRequest(request) {
+  // Add CORS headers
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "https://do9.co",
+    "Access-Control-Allow-Methods": "GET",
+    "Access-Control-Max-Age": "86400",
+  };
+
+  // Handle CORS preflight requests
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      headers: corsHeaders,
+    });
+  }
+
   const url = new URL(request.url);
   // Get everything after workers.dev
   const imagePath = url.pathname;
@@ -23,17 +37,24 @@ async function handleRequest(request) {
     // Fetch and return the resized image
     const imageResponse = await fetch(resizedImageUrl);
     if (!imageResponse.ok) {
-      return new Response("Image not found", { status: 404 });
+      return new Response("Image not found", {
+        status: 404,
+        headers: corsHeaders,
+      });
     }
 
     // Return the image with appropriate headers
     return new Response(imageResponse.body, {
       headers: {
+        ...corsHeaders,
         "Content-Type": "image/jpeg",
         "Cache-Control": "public, max-age=86400",
       },
     });
   } catch (error) {
-    return new Response("Error processing image", { status: 500 });
+    return new Response("Error processing image", {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 }
