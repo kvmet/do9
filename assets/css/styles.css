@@ -1,7 +1,7 @@
 :root {
   --bg-color: #1a1a1a;
   --text-color: #e0e0e0;
-  --accent-color: #808080;
+  --accent-color: #606060;
   --card-bg: #2a2a2a;
   --hover-color: #404040;
   --border-color: #333;
@@ -18,33 +18,47 @@ body {
   color: var(--text-color);
 }
 
-.site-header {
+.site-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background: var(--card-bg);
-  padding: 1rem 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  margin-bottom: 2rem;
-}
-
-.site-title a {
-  color: var(--text-color);
-}
-
-.site-nav a {
-  color: var(--accent-color);
-}
-
-.site-nav a:hover {
-  color: var(--text-color);
+  padding: 8px 20px;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 100;
 }
 
 .copyright {
   color: var(--accent-color);
 }
 
+.site-nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.site-nav a {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.site-nav a:hover {
+  color: var(--text-color);
+}
+
 .photo-gallery {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px 20px;
+  padding: 20px;
+
+  padding-bottom: 50px;
 }
 
 .breadcrumbs {
@@ -196,5 +210,11 @@ body {
 
   .image-item img {
     max-width: 100%;
+  }
+
+  .site-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 8px;
   }
 }
